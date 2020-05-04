@@ -52,7 +52,7 @@
 
                     plot.on('plotly_click', (data) => {
                         console.log(data)
-                        alert(`Clicked on ${functional} pump`)
+                        alert(`Clicked on ${data[0].text} pump`)
                     })
 
                 } catch (err) {
