@@ -46,12 +46,14 @@
                         autosize: true,
                         showlegend: true,
                     };
-        
-                    Plotly.setPlotConfig({
-                        mapboxAccessToken: "pk.eyJ1IjoibWFjaWtlcmEiLCJhIjoiY2s5Yms2czhnMDRvdTNtczN4dzV2YjhubSJ9.9fzPyd3DeeVGNZ2SsuE2bQ"
+
+                    const plot = await Plotly.newPlot("map", data, layout)
+
+                    plot.on('plotly_click', (data) => {
+                        console.log(data)
+                        alert(`Clicked on ${functional} pump`)
                     })
 
-                    Plotly.newPlot("map", data, layout);                
                 } catch (err) {
                     console.log("error", err)
                 }
