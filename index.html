@@ -1,14 +1,15 @@
 <html>
     <head>
         <!-- Load plotly.js into the DOM -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
         <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
         <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
     </head>
 
-    <body>
-        <div id='map'></div>
+    <body style="height: 100%;">
+        <div id='map' style="min-height: 100%;"></div>
         <script>
             const main = async () => {
                 const unpack = (rows, key) => rows.map(row => row[key])
@@ -40,9 +41,7 @@
                         dragmode: "zoom",
                         mapbox: { style: "light", center: { lat: stations[0].latitude, lon: stations[0].longitude }, zoom: 6 },
                         margin: { r: 0, t: 0, b: 0, l: 0 },
-                        autosize: false,
-                        width: 1600,
-                        height: 800,
+                        autosize: true,
                         showlegend: false,
                     };
         
