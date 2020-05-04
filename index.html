@@ -41,11 +41,12 @@
 
                     const layout = {
                         dragmode: "zoom",
-                        mapbox: { style: "light", center: { lat: center.latitude, lon: center.longitude }, zoom: 6 },
+                        mapbox: { style: "open-street-map", center: { lat: center.latitude, lon: center.longitude }, zoom: 6 },
                         margin: { r: 0, t: 0, b: 0, l: 0 },
                         autosize: true,
                         showlegend: true,
                     };
+
 
                     const plot = await Plotly.newPlot("map", data, layout)
 
