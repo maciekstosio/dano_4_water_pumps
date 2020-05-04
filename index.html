@@ -8,15 +8,17 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
     </head>
 
-    <body style="height: 100%;">
+    <body style="height: 100%; margin: 0;">
         <div id='map' style="min-height: 100%;"></div>
         <script>
             const main = async () => {
                 const unpack = (rows, key) => rows.map(row => row[key])
-
                 const status_map = ["functional", "non functional", "functional needs repair"]
-
                 const category_color = ["green", "red", "yellow"]
+                const center = {
+                    longitude: 34.077427,
+                    latitude: -5.706033,
+                }
 
                 try {
                     const stations = await d3.csv("data_for_vis.csv")
@@ -39,10 +41,10 @@
 
                     const layout = {
                         dragmode: "zoom",
-                        mapbox: { style: "light", center: { lat: stations[0].latitude, lon: stations[0].longitude }, zoom: 6 },
+                        mapbox: { style: "light", center: { lat: center.latitude, lon: center.longitude }, zoom: 6 },
                         margin: { r: 0, t: 0, b: 0, l: 0 },
                         autosize: true,
-                        showlegend: false,
+                        showlegend: true,
                     };
         
                     Plotly.setPlotConfig({
