@@ -1,78 +1,62 @@
-<head>
-	<!-- Load plotly.js into the DOM -->
-    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
-    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
-    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
-</head>
+<html>
+    <head>
+        <!-- Load plotly.js into the DOM -->
+        <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+        <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+        <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+    </head>
 
-<body>
-	<div id='myDiv'><!-- Plotly chart will be drawn inside this DIV --></div>
-    <script>
-        const main = async () => {
-            function unpack(rows, key) {
-                return rows.map(function(row) {
-                    return row[key];
-                });
-            }
+    <body>
+        <div id='map'></div>
+        <script>
+            const main = async () => {
+                const unpack = (rows, key) => rows.map(row => row[key])
 
-            try {
-                const stations = await d3.csv("data_for_vis.csv")
+                const status_map = ["functional", "non functional", "functional needs repair"]
 
-                console.log("stations", stations)
-                
-                var data = [
-                    {
-                        type: "scattermapbox",
-                        text: unpack(stations, "status_group"),
-                        lon: unpack(stations, "longitude"),
-                        lat: unpack(stations, "latitude"),
-                        marker: { color: "blue", size: 5 }
-                    },
-                    // ...network.map(({from, to, weight}) => (
-                    //     {
-                    //         type: 'scattermapbox',
-                    //         lon: [stations_map[from]['lng'], stations_map[to]['lng']],
-                    //         lat: [stations_map[from]['lat'], stations_map[to]['lat']],
-                    //         mode: 'lines',
-                    //         line: {
-                    //             width: 1,
-                    //             color: "blue"
-                    //         },
-                    //         opacity: 0.5
-                    //     }
-                    // )),
-                ];
+                const category_color = ["green", "red", "yellow"]
 
-                const layout = {
-                    dragmode: "zoom",
-                    mapbox: { style: "light", center: { lat: 51.108004, lon: 17.039528 }, zoom: 11 },
-                    margin: { r: 0, t: 0, b: 0, l: 0 },
-                    autosize: false,
-                    width: 1600,
-                    height: 800,
-                    showlegend: false,
-                    geo: {
-                        projection: {
-                            type: 'orthographic',
-                            rotation: {
-                                lon: 51.108004,
-                                lat: 17.039528
-                            },
+                try {
+                    const stations = await d3.csv("data_for_vis.csv")
+
+                    console.log("stations", stations)
+                    
+                    var data = [
+                        {
+                            type: "scattermapbox",
+                            text: unpack(stations, "status_group").map(category => status_map[category]),
+                            lon: unpack(stations, "longitude"),
+                            lat: unpack(stations, "latitude"),
+                            marker: { 
+                                color: unpack(stations, "status_group").map(category => category_color[category]),
+                                size: 5,
+                                opacity: 0.5
+                            }
                         },
-                    }
-                };
-    
-                Plotly.setPlotConfig({
-                    mapboxAccessToken: "pk.eyJ1IjoibWFjaWtlcmEiLCJhIjoiY2s5Yms2czhnMDRvdTNtczN4dzV2YjhubSJ9.9fzPyd3DeeVGNZ2SsuE2bQ"
-                })
+                    ];
 
-                Plotly.newPlot("myDiv", data, layout);                
-            } catch (err) {
-                console.log("error", err)
+                    const layout = {
+                        dragmode: "zoom",
+                        mapbox: { style: "light", center: { lat: stations[0].latitude, lon: stations[0].longitude }, zoom: 6 },
+                        margin: { r: 0, t: 0, b: 0, l: 0 },
+                        autosize: false,
+                        width: 1600,
+                        height: 800,
+                        showlegend: false,
+                    };
+        
+                    Plotly.setPlotConfig({
+                        mapboxAccessToken: "pk.eyJ1IjoibWFjaWtlcmEiLCJhIjoiY2s5Yms2czhnMDRvdTNtczN4dzV2YjhubSJ9.9fzPyd3DeeVGNZ2SsuE2bQ"
+                    })
+
+                    Plotly.newPlot("map", data, layout);                
+                } catch (err) {
+                    console.log("error", err)
+                }
             }
-        }
 
-        main()
-    </script>
-</body>
+            main()
+        </script>
+    </body>
+</html>
