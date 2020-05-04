@@ -1,0 +1,366 @@
+<head>
+	<!-- Load plotly.js into the DOM -->
+    <script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+    <script src="https://d3js.org/d3-dsv.v1.min.js"></script>
+    <script src="https://d3js.org/d3-fetch.v1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+</head>
+
+<body>
+	<div id='myDiv'><!-- Plotly chart will be drawn inside this DIV --></div>
+    <script>
+        const main = async () => {
+            function hslToRgb(h, s, l){
+                var r, g, b;
+
+                if(s == 0){
+                    r = g = b = l; // achromatic
+                }else{
+                    var hue2rgb = function hue2rgb(p, q, t){
+                        if(t < 0) t += 1;
+                        if(t > 1) t -= 1;
+                        if(t < 1/6) return p + (q - p) * 6 * t;
+                        if(t < 1/2) return q;
+                        if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                        return p;
+                    }
+
+                    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                    var p = 2 * l - q;
+                    r = hue2rgb(p, q, h + 1/3);
+                    g = hue2rgb(p, q, h);
+                    b = hue2rgb(p, q, h - 1/3);
+                }
+
+                // return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+                return `rgba(${Math.round(r * 255)}, ${Math.round(g * 255)}, ${Math.round(b * 255)}, 1)`
+            }
+
+            const scale = (inputY, yRange, xRange) => {
+                const [xMin, xMax] = xRange;
+                const [yMin, yMax] = yRange;
+
+                const percent = (inputY - yMin) / (yMax - yMin);
+                const outputX = percent * (xMax - xMin) + xMin;
+
+                return outputX;
+            }
+
+            function unpack(rows, key) {
+                return rows.map(function(row) {
+                    return row[key];
+                });
+            }
+
+            try {
+                const stations = await d3.csv("stacje.csv")
+                const network = await d3.csv("network.csv")
+                const network_stations = [
+                    ...(new Set(unpack(network, "from"))),
+                    ...(new Set(unpack(network, "to")))
+                ]
+                const node_params = await d3.csv("node_params.csv")
+                const pwr = await d3.csv("pwr.csv")
+                const speed_network = await d3.csv("speed.csv")
+                const speed_fast = await d3.csv("fast.csv")
+                const speed_slow = await d3.csv("slow.csv")
+                const asyn_fluid = await d3.csv("clustering/asyn_fluid.csv")
+                const greedy_modularity_communities = await d3.csv("clustering/greedy_modularity_communities.csv")
+                const k_clique_community = await d3.csv("clustering/k_clique_community.csv")
+                const label_propagation_communities = await d3.csv("clustering/label_propagation_communities.csv")
+                const asyn_fluid_2_clusters = await d3.csv("clustering/asyn_fluid_2_clusters.csv")
+                const greedy_modularity_communities_2_clusters = await d3.csv("clustering/greedy_modularity_communities_2_clusters.csv")
+                const shortes_paths = await d3.json('shortes_paths.json')
+                const betweennes_best = await d3.csv("best_nodes/betweennes_best.csv")
+                const closenness_best = await d3.csv("best_nodes/closenness_best.csv")
+                const pagerank_best = await d3.csv("best_nodes/pagerank_best.csv")
+
+                const stations_map = stations.reduce((acc, curr) => ({
+                    ...acc,
+                    [curr._id]: curr,
+                }), {})
+
+                console.log("loaded data", stations, network, stations_map, shortes_paths)
+
+                console.log("SPEED", Math.min(...speed_network.map(item => item.speed)), Math.max(...speed_network.map(item => item.speed)))
+                console.log("clustering", Math.min(...node_params.map(item => item.clustering)), Math.max(...node_params.map(item => item.clustering)))
+                console.log("closenness", Math.min(...node_params.map(item => item.closenness)), Math.max(...node_params.map(item => item.closenness)))
+                console.log("pagerank", Math.min(...node_params.map(item => item.pagerank)), Math.max(...node_params.map(item => item.pagerank)))
+                console.log("betweenness", Math.min(...node_params.map(item => item.betweenness)), Math.max(...node_params.map(item => item.betweenness)))
+                
+                const colors = [
+                    'rgba(255, 238, 0, 0.5)',
+                    'rgba(255, 217, 0, 0.5)',
+                    'rgba(255, 200, 0, 0.5)',
+                    'rgba(255, 170, 0, 0.5)',
+                    'rgba(255, 149, 0, 0.5)',
+                    'rgba(255, 140, 0, 0.5)',
+                    'rgba(255, 132, 0, 0.5)',
+                    'rgba(255, 119, 0, 0.5)',
+                    'rgba(255, 106, 0, 0.5)',
+                    'rgba(255, 98, 0, 0.5)',
+                    'rgba(255, 85, 0, 0.5)',
+                    'rgba(255, 72, 0, 0.5)',
+                    'rgba(255, 64, 0, 0.5)',
+                    'rgba(255, 55, 0, 0.5)',
+                    'rgba(255, 42, 0, 0.5)',
+                    'rgba(255, 30, 0, 0.5)',
+                    'rgba(191, 23, 0, 0.5)',
+                    'rgba(191, 13, 0, 0.5)',
+                    'rgba(156, 12, 2, 0.5)',
+                    'rgba(125, 8, 0, 0.5)',
+                ]
+
+                const cluter_colors = [
+                    'rgba(255, 0, 0, 1)',
+                    'rgba(255, 119, 0, 1)',
+                    'rgba(0, 255, 0, 1)',
+                    'rgba(0, 174, 255, 1)',
+                    'rgba(255, 0, 251, 1)',
+                ]
+
+                console.log("network_stations", network_stations)
+
+                var data = [
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: unpack(stations, "name"),
+                    //     lon: unpack(stations, "lng"),
+                    //     lat: unpack(stations, "lat"),
+                    //     marker: { color: "blue", size: 5 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: network_stations.map(item => stations_map[item]['name']),
+                    //     lon: network_stations.map(item => stations_map[item]['lng']),
+                    //     lat: network_stations.map(item => stations_map[item]['lat']),
+                    //     marker: { color: "blue", size: 5 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: [98, 168, 185, 191].map(item => stations_map[item]['name']),
+                    //     lon: [98, 168, 185, 191].map(item => stations_map[item]['lng']),
+                    //     lat: [98, 168, 185, 191].map(item => stations_map[item]['lat']),
+                    //     marker: { color: "red", size: 5 }
+                    // },
+                    // ...network.map(({from, to, weight}) => (
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         lon: [stations_map[from]['lng'], stations_map[to]['lng']],
+                    //         lat: [stations_map[from]['lat'], stations_map[to]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 1,
+                    //             color: "blue"
+                    //         },
+                    //         opacity: 0.5
+                    //     }
+                    // )),
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: unpack(node_params, "id").map(item => stations_map[item]['name']),
+                    //     lon: unpack(node_params, "id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(node_params, "id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: "fuchsia", size: unpack(node_params, "betweenness").map(item => item * 1000) }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: unpack(node_params, "id").map(item => stations_map[item]['name']),
+                    //     lon: unpack(node_params, "id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(node_params, "id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: "fuchsia", size: unpack(node_params, "pagerank").map(item => item * 2000) }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     text: unpack(node_params, "id").map(item => stations_map[item]['name']),
+                    //     lon: unpack(node_params, "id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(node_params, "id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: "fuchsia", size: unpack(node_params, "closenness").map(item => item * 10) }
+                    // },
+                    // { //Colors in progress
+                    //     type: "scattermapbox",
+                    //     text: unpack(node_params, "id").map(item => stations_map[item]['name']),
+                    //     lon: unpack(node_params, "id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(node_params, "id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(node_params, "betweenness").map(item => hslToRgb(item*50, 1, 0.5)), size: unpack(node_params, "betweenness").map(item => item * 1000) }
+                    // },
+                    //CLUSTERING
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(asyn_fluid, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(asyn_fluid, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(asyn_fluid, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(greedy_modularity_communities, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(greedy_modularity_communities, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(greedy_modularity_communities, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(k_clique_community, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(k_clique_community, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(k_clique_community, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(label_propagation_communities, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(label_propagation_communities, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(label_propagation_communities, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(asyn_fluid_2_clusters, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(asyn_fluid_2_clusters, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(asyn_fluid_2_clusters, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // {
+                    //     type: "scattermapbox",
+                    //     lon: unpack(greedy_modularity_communities_2_clusters, "node_id").map(item => stations_map[item]['lng']),
+                    //     lat: unpack(greedy_modularity_communities_2_clusters, "node_id").map(item => stations_map[item]['lat']),
+                    //     marker: { color: unpack(greedy_modularity_communities_2_clusters, "cluster_id").map(item => cluter_colors[item]), size: 10 }
+                    // },
+                    // ...Object.keys(shortes_paths).map((key, index) => ( //Shortest paths
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         name: key,
+                    //         lon: shortes_paths[key].map(item => stations_map[item]['lng']),
+                    //         lat: shortes_paths[key].map(item => stations_map[item]['lat']),
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 4,
+                    //             color: cluter_colors[index + 2]
+                    //         },
+                    //         opacity: 1
+                    //     }
+                    // )),
+                    // ...betweennes_best.map(({source, target, group}) => ( //Betweennes_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         name: group,
+                    //         lon: [stations_map[source]['lng'], stations_map[target]['lng']],
+                    //         lat: [stations_map[source]['lat'], stations_map[target]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 2,
+                    //             color: cluter_colors[group]
+                    //         },
+                    //         opacity: 0.5
+                    //     }
+                    // )),
+                    // ...closenness_best.map(({source, target, group}) => ( //closenness_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         name: group,
+                    //         lon: [stations_map[source]['lng'], stations_map[target]['lng']],
+                    //         lat: [stations_map[source]['lat'], stations_map[target]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 2,
+                    //             color: cluter_colors[group]
+                    //         },
+                    //         opacity: 0.5
+                    //     }
+                    // )),
+                    // ...pagerank_best.map(({source, target, group}) => ( //pagerank_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         name: group,
+                    //         lon: [stations_map[source]['lng'], stations_map[target]['lng']],
+                    //         lat: [stations_map[source]['lat'], stations_map[target]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 2,
+                    //             color: cluter_colors[group]
+                    //         },
+                    //         opacity: 0.5
+                    //     }
+                    // )),
+                    // ...pwr.map(({source, target}) => ( //pagerank_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         lon: [stations_map[source]['lng'], stations_map[target]['lng']],
+                    //         lat: [stations_map[source]['lat'], stations_map[target]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 2,
+                    //             color: "blue"
+                    //         },
+                    //         opacity: 0.5
+                    //     }
+                    // )),
+                    // ...speed_fast.map(({from, to}) => ( //pagerank_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         lon: [stations_map[from]['lng'], stations_map[to]['lng']],
+                    //         lat: [stations_map[from]['lat'], stations_map[to]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 3,
+                    //             color: "red"
+                    //         },
+                    //         opacity: 1
+                    //     }
+                    // )),
+                    // ...speed_slow.map(({from, to}) => ( //pagerank_best
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         lon: [stations_map[from]['lng'], stations_map[to]['lng']],
+                    //         lat: [stations_map[from]['lat'], stations_map[to]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 3,
+                    //             color: "green"
+                    //         },
+                    //         opacity: 1
+                    //     }
+                    // )),
+                    // ..._.sampleSize(speed_network, 100).map(({from, to, speed}) => (
+                    //     {
+                    //         type: 'scattermapbox',
+                    //         text: speed,
+                    //         lon: [stations_map[from]['lng'], stations_map[to]['lng']],
+                    //         lat: [stations_map[from]['lat'], stations_map[to]['lat']],
+                    //         mode: 'lines',
+                    //         line: {
+                    //             width: 1,
+                    //             color: hslToRgb(scale(speed, [Math.min(...speed_network.map(item => item.speed)), Math.max(...speed_network.map(item => item.speed))], [0.6, 1.0]), 1, 0.5),
+                    //         },
+                    //         opacity: 1
+                    //     }
+                    // )),
+                ];
+
+                var layout = {
+                    dragmode: "zoom",
+                    mapbox: { style: "light", center: { lat: 51.108004, lon: 17.039528 }, zoom: 11 },
+                    margin: { r: 0, t: 0, b: 0, l: 0 },
+                    autosize: false,
+                    width: 1600,
+                    height: 800,
+                    showlegend: false,
+                    geo: {
+                        projection: {
+                            type: 'orthographic',
+                            rotation: {
+                                lon: 51.108004,
+                                lat: 17.039528
+                            },
+                        },
+                    }
+                };
+    
+                Plotly.setPlotConfig({
+                    mapboxAccessToken: "pk.eyJ1IjoibWFjaWtlcmEiLCJhIjoiY2s5Yms2czhnMDRvdTNtczN4dzV2YjhubSJ9.9fzPyd3DeeVGNZ2SsuE2bQ"
+                })
+
+                Plotly.newPlot("myDiv", data, layout);                
+            } catch (err) {
+                console.log("error", err)
+            }
+        }
+
+        main()
+    </script>
+</body>
