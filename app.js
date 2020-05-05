@@ -35,7 +35,55 @@ const main = async () => {
 
         console.log("stations", stations)
 
-        var data = [
+        stations0 = stations.filter(x => x.status_group == 0)
+
+        var data0 = {
+                type: "scattermapbox",
+                text: unpack(stations0, "status_group").map(category => status_map[category]),
+                lon: unpack(stations0, "longitude"),
+                lat: unpack(stations0, "latitude"),
+                marker: {
+                    color: unpack(stations0, "status_group").map(category => category_color[category]),
+                    size: 5,
+                    opacity: 0.5
+                },
+                name: "Functional"
+            }
+
+        stations1 = stations.filter(x => x.status_group == 1)
+
+        var data1 = {
+                type: "scattermapbox",
+                text: unpack(stations1, "status_group").map(category => status_map[category]),
+                lon: unpack(stations1, "longitude"),
+                lat: unpack(stations1, "latitude"),
+                marker: {
+                    color: unpack(stations1, "status_group").map(category => category_color[category]),
+                    size: 5,
+                    opacity: 0.5
+                },
+                name: "Non functional"
+            }
+
+        stations2 = stations.filter(x => x.status_group == 2)
+
+        var data2 = {
+                type: "scattermapbox",
+                text: unpack(stations2, "status_group").map(category => status_map[category]),
+                lon: unpack(stations2, "longitude"),
+                lat: unpack(stations2, "latitude"),
+                marker: {
+                    color: unpack(stations2, "status_group").map(category => category_color[category]),
+                    size: 5,
+                    opacity: 0.5
+                },
+                name: "Need repair"
+            }
+        
+
+        var data = [data2, data1, data0];
+
+        /*var data = [
             {
                 type: "scattermapbox",
                 text: unpack(stations, "status_group").map(category => status_map[category]),
@@ -47,7 +95,9 @@ const main = async () => {
                     opacity: 0.5
                 }
             },
-        ];
+        ];*/
+
+        
 
         const layout = {
             dragmode: "zoom",
@@ -55,6 +105,11 @@ const main = async () => {
             margin: { r: 0, t: 0, b: 0, l: 0 },
             autosize: true,
             showlegend: true,
+            legend: {
+                x: 0.03,
+                xanchor: 'left',
+                y: 0.95
+              }
         };
 
 
