@@ -21,6 +21,8 @@
         crossorigin="anonymous"></script>
     <!-- Vue -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- Faker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Faker/3.1.0/faker.js"></script>
 </head>
 
 <body style="height: 100%; margin: 0;">
@@ -54,9 +56,16 @@
                                 </li>
                             </ul>
                         </div>
+                        <form>
+                            <div class="form-group">
+                                <label for="exampleFormControlTextarea1">Report</label>
+                                <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"></textarea>
+                            </div>
+                        </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Report</button>
                     </div>
                 </div>
             </div>

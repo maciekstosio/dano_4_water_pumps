@@ -1,45 +1,57 @@
+const unpack = (rows, key) => rows.map(row => row[key])
+const randomInt = (min, max) => min + Math.floor((max - min) * Math.random())
+
+const status_map = ["functional", "non functional", "need repair"]
+
+const category_color = ["green", "red", "yellow"]
+
+const center = {
+    longitude: 34.077427,
+    latitude: -5.706033,
+}
+
 var app = new Vue({
     el: '#app',
     data: {
+        points: [],
         details: [],        
     },
     methods: {
+        updatePoints: function(data) {
+            this.points = data
+        },
         update: function(data) {
-            this.details = data.map(item => ({
-                console: console.log(item),
-                id: 69572,
-                subvillage: "Mnyusi B",
-                status: 2,
-                status_text: "non functional",
-                image: 'https://via.placeholder.com/700x300.png',
-                reports: [{
-                    id: 1,
-                    text: "Consectetur sunt ut laborum irure eiusmod veniam aliqua fugiat."
-                }]
-            }))
+            this.details = data.map(item => {
+                const point = this.points.find(p => p.id === item.text)
+                const {status_group, subvillage, id} = point
+
+                return {
+                    id,
+                    subvillage,
+                    status: status_group,
+                    status_text: status_map[status_group],
+                    image: faker.image.city(),
+                    reports: new Array(randomInt(0, 4)).fill(null).map(_ => ({
+                        id: faker.random.uuid(),
+                        text: faker.lorem.paragraph()
+                    })),
+                }
+            })
         },
     }
 })
 
 const main = async () => {
-    const unpack = (rows, key) => rows.map(row => row[key])
-    const status_map = ["functional", "non functional", "functional needs repair"]
-    const category_color = ["green", "red", "yellow"]
-    const center = {
-        longitude: 34.077427,
-        latitude: -5.706033,
-    }
-
     try {
         const stations = await d3.csv("data_for_vis.csv")
 
-        console.log("stations", stations)
+        app.updatePoints(stations)
 
         stations0 = stations.filter(x => x.status_group == 0)
 
         var data0 = {
                 type: "scattermapbox",
-                text: unpack(stations0, "status_group").map(category => status_map[category]),
+                text: unpack(stations0, "id"),
                 lon: unpack(stations0, "longitude"),
                 lat: unpack(stations0, "latitude"),
                 marker: {
@@ -54,7 +66,7 @@ const main = async () => {
 
         var data1 = {
                 type: "scattermapbox",
-                text: unpack(stations1, "status_group").map(category => status_map[category]),
+                text: unpack(stations1, "id"),
                 lon: unpack(stations1, "longitude"),
                 lat: unpack(stations1, "latitude"),
                 marker: {
@@ -69,7 +81,7 @@ const main = async () => {
 
         var data2 = {
                 type: "scattermapbox",
-                text: unpack(stations2, "status_group").map(category => status_map[category]),
+                text: unpack(stations2, "id"),
                 lon: unpack(stations2, "longitude"),
                 lat: unpack(stations2, "latitude"),
                 marker: {
@@ -109,14 +121,13 @@ const main = async () => {
                 x: 0.03,
                 xanchor: 'left',
                 y: 0.95
-              }
+            }
         };
-
 
         const plot = await Plotly.newPlot("map", data, layout)
 
         plot.on('plotly_click', (data) => {
-            console.log(data)
+            console.log("CLICK", data)
             app.update(data.points)
             $("#exampleModal").modal()
         })
